@@ -22,8 +22,8 @@ DOCKERMACHINE 	:= $(call get-command,docker-machine)
 BOOT2DOCKER 	:= $(call get-command,boot2docker)
 
 GIT_REVISION_SHORTCODE := $(shell git rev-parse --short HEAD)
-GIT_REVISION := $(shell git describe --abbrev=0 --tags --exact-match 2> /dev/null || git rev-parse --short HEAD)
-GIT_REVISION_DATE := $(shell git show -s --format=%ci $(GIT_REVISION_SHORTCODE))
+GIT_REVISION := 9.9.9
+GIT_REVISION_DATE := 2028-11-15 00:54:06 -0800
 
 REVISION_DATE := $(shell date -u -j -f "%F %T %z" "$(GIT_REVISION_DATE)" +"%Y%m%d.%H%M%S" 2>/dev/null || date -u -d "$(GIT_REVISION_DATE)" +"%Y%m%d.%H%M%S")
 BUILD_DATE := $(shell date -u +%Y%m%d.%H%M%S)
@@ -293,23 +293,22 @@ package-linux-arm: require-version linux-arm
 	@$(call fpm-debian-build,"arm")
 	@echo "-> lantern_$(VERSION)_arm.deb"
 
-package-windows: $(BNS_CERT) require-version windows
-	@if [[ -z "$$BNS_CERT_PASS" ]]; then echo "BNS_CERT_PASS environment value is required."; exit 1; fi && \
-	INSTALLER_RESOURCES="installer-resources/windows" && \
-	rm -f $$INSTALLER_RESOURCES/$(PACKAGED_YAML) && \
-	rm -f $$INSTALLER_RESOURCES/$(LANTERN_YAML) && \
-	cp installer-resources/$(PACKAGED_YAML) $$INSTALLER_RESOURCES/$(PACKAGED_YAML) && \
-	cp $(LANTERN_YAML_PATH) $$INSTALLER_RESOURCES/$(LANTERN_YAML) && \
-	osslsigncode sign -pkcs12 "$(BNS_CERT)" -pass "$$BNS_CERT_PASS" -n "Lantern" -t http://timestamp.verisign.com/scripts/timstamp.dll -in "lantern_windows_386.exe" -out "$$INSTALLER_RESOURCES/lantern.exe" && \
-	cat $$INSTALLER_RESOURCES/lantern.exe | bzip2 > update_windows_386.bz2 && \
-	ls -l lantern_windows_386.exe update_windows_386.bz2 && \
-	makensis -V1 -DVERSION=$$VERSION installer-resources/windows/lantern.nsi && \
-	osslsigncode sign -pkcs12 "$(BNS_CERT)" -pass "$$BNS_CERT_PASS" -n "Lantern" -t http://timestamp.verisign.com/scripts/timstamp.dll -in "$$INSTALLER_RESOURCES/lantern-installer-unsigned.exe" -out "lantern-installer.exe" && \
-	cp installer-resources/$(MANOTO_YAML) $$INSTALLER_RESOURCES/$(PACKAGED_YAML) && \
-	cp $(LANTERN_YAML_PATH) $$INSTALLER_RESOURCES/$(LANTERN_YAML) && \
-	makensis -V1 -DVERSION=$$VERSION installer-resources/windows/lantern.nsi && \
-	osslsigncode sign -pkcs12 "$(BNS_CERT)" -pass "$$BNS_CERT_PASS" -n "Lantern" -t http://timestamp.verisign.com/scripts/timstamp.dll -in "$$INSTALLER_RESOURCES/lantern-installer-unsigned.exe" -out "lantern-installer-manoto.exe" && \
-	echo "-> lantern-installer.exe and lantern-installer-manoto.exe"
+package-windows: require-version windows
+    INSTALLER_RESOURCES="installer-resources/windows" && \
+    rm -f $$INSTALLER_RESOURCES/$(PACKAGED_YAML) && \
+    rm -f $$INSTALLER_RESOURCES/$(LANTERN_YAML) && \
+    cp installer-resources/$(PACKAGED_YAML) $$INSTALLER_RESOURCES/$(PACKAGED_YAML) && \
+    cp $(LANTERN_YAML_PATH) $$INSTALLER_RESOURCES/$(LANTERN_YAML) && \
+    cp "lantern_windows_386.exe" "$$INSTALLER_RESOURCES/lantern.exe" && \
+    cat $$INSTALLER_RESOURCES/lantern.exe | bzip2 > update_windows_386.bz2 && \
+    ls -l lantern_windows_386.exe update_windows_386.bz2 && \
+    makensis -V1 -DVERSION=$$VERSION installer-resources/windows/lantern.nsi && \
+    cp "$$INSTALLER_RESOURCES/lantern-installer-unsigned.exe" "lantern-installer.exe" && \
+    cp installer-resources/$(MANOTO_YAML) $$INSTALLER_RESOURCES/$(PACKAGED_YAML) && \
+    cp $(LANTERN_YAML_PATH) $$INSTALLER_RESOURCES/$(LANTERN_YAML) && \
+    makensis -V1 -DVERSION=$$VERSION installer-resources/windows/lantern.nsi && \
+    cp "$$INSTALLER_RESOURCES/lantern-installer-unsigned.exe" "lantern-installer-manoto.exe" && \
+    echo "-> lantern-installer.exe and lantern-installer-manoto.exe"
 
 linux: linux-386 linux-amd64
 
